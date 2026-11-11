@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Экзаменационный квиз: Русский язык</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-slate-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="w-full max-w-2xl bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl p-6 md:p-8 transition-all duration-300">
+        
+        <!-- Шапка квиза -->
+        <div id="quiz-header" class="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
+            <span class="text-xs uppercase tracking-wider font-semibold px-3 py-1 bg-indigo-500/20 text-indigo-400 rounded-full border border-indigo-500/30">
+                Русский язык • Экзамен
+            </span>
+            <span id="progress-text" class="text-sm font-medium text-slate-400">Вопрос 1 из 30</span>
+        </div>
+
+        <!-- Контейнер с вопросом -->
+        <div id="quiz-screen" class="space-y-6">
+            <h2 id="question-text" class="text-xl md:text-2xl font-bold text-slate-100 leading-snug">
+                Загрузка вопроса...
+            </h2>
+
+            <!-- Варианты ответов -->
+            <div id="options-container" class="space-y-3">
+                <!-- Динамически заполняется через JS -->
+            </div>
+        </div>
+
+        <!-- Экран результатов (скрыт по умолчанию) -->
+        <div id="result-screen" class="hidden text-center space-y-6 py-6 animate-fade-in">
+            <div id="result-emoji" class="inline-flex items-center justify-center w-20 h-20 bg-indigo-500/10 border border-indigo-500/30 rounded-full text-indigo-400 text-3xl mb-2 shadow-inner">
+                🏆
+            </div>
+            <h2 class="text-3xl font-extrabold text-white">Тест завершен!</h2>
+            <p id="score-text" class="text-lg text-slate-300"></p>
+            
+            <!-- Блок с прикольным / саркастичным вердиктом -->
+            <div id="feedback-box" class="p-4 rounded-xl border bg-slate-800/50 text-base font-medium transition-all">
+                <!-- Сюда динамически падает текст -->
+            </div>
+
+            <button onclick="restartQuiz()" class="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl shadow-lg shadow-indigo-600/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0">
+                Пройти еще раз 🚀
+            </button>
+        </div>
+
+        <!-- Кнопка далее -->
+        <div class="mt-8 flex justify-end">
+            <button id="next-btn" onclick="nextQuestion()" class="hidden px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-xl shadow-md transition-all transform hover:-translate-y-0.5">
+                Следующий вопрос
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        const rawData = [
+            { q: "Какое значение имеет глагол?", o: ["Действие предмета.", "Предмет.", "Признак предмета", "Наречие"] },
+            { q: "Глагол отвечает на следующие вопросы:", o: ["что делает? что сделал? что будет делать?", "какой? какая? какое? какие?", "кто? что?", "кому? чему?"] },
+            { q: "Отметьте глагол будущего времени.", o: ["прилетит", "воркует", "написала", "пробежала"] },
+            { q: "Выберите глагол, который стоит в форме прошедшего времени?", o: ["задали", "выходит", "покатиться", "напишет"] },
+            { q: "Какой из данных глаголов имеет несовершенный вид? (Ася словно избегала меня...)", o: ["избегала", "не позволила", "удивили", "прибежал"] },
+            { q: "В каком из данных глаголов должна писаться буква И?", o: ["мысл..шь (мыслишь)", "налива..м", "покупа..т", "меша..тся"] },
+            { q: "Выберите глагол, в котором пишется буква Е?", o: ["прос..те (просите)", "копа..шь", "слыш..т", "обид..шься"] },
+            { q: "Выберите ряд, где в каждом слове пишется буква а(я):", o: ["(они) пада..т, топч..т", "(они) гон..тся, лов..т", "(они) участву..т, топ..т", "(они) став..т, стел..т"] },
+            { q: "Выберите глагол, где пишется буква у(ю):", o: ["(они) протесту..т", "(они) довод..тся", "(они) мысл..т", "(они) дыш..т"] },
+            { q: "Какое из данных словосочетаний написано с ошибкой?", o: ["меня греит", "съедешь на картонке", "служат родине", "читает книгу"] },
+            { q: "Какой глагол имеет второе спряжение?", o: ["смотреть", "играть", "молоть", "кушать"] },
+            { q: "Выберите глагол, который стоит в форме настоящего времени:", o: ["кушаю", "разожгу", "строить", "сжевал"] },
+            { q: "Выберите строку, в которой все глаголы пишутся раздельно с НЕ?", o: ["(не)накрывать, (не)смотреть, (не)любить", "(не)видел, (не)увидел, (не)здоровится", "(не)говорить, (не)догнать, (не)домогать", "(не)готовиться, (не)прибегай, (не)годовать"] },
+            { q: "Выберите строку, в которой все глаголы имеют несовершенный вид?", o: ["расправлять, заплывать, читать, дышать", "расправлять, загореть, требовать, закрыть", "распрявлять, согреть, потребовать", "распределять, отогреть, открыть"] },
+            { q: "В каком из данных слов не пишется мягкий знак?", o: ["отреж…", "молчиш..", "зажеч..", "мыш…"] },
+            { q: "Каким образом изменяются глаголы прошедшего времени?", o: ["По числам, по родам", "По падежам, по временам", "По родам, по падежам", "По временам"] },
+            { q: "Определите род данных глаголов: подходила, опустела, наполнилась.", o: ["Женский род", "Мужской род", "Средний род", "Единственный род"] },
+            { q: "В каком ряду все слова имеют неопределённую форму глагола?", o: ["искать, стремиться, нервничать, беречь", "смеётся, радуется, говорить, жаловаться", "расправлять, согреть, потребовать", "распределять, отогреть, открыть"] },
+            { q: "Выберите глаголы среднего рода:", o: ["осветило", "оттаяла", "впряглись", "скрипит"] },
+            { q: "Каким членом предложения является глагол:", o: ["главным", "второстепенным", "ни тем, ни другим", "единственный род"] },
+            { q: "Меняется ли глагол по числам?", o: ["да", "нет", "иногда", "не всегда"] },
+            { q: "Ряд слов, относящихся к общенаучной лексике:", o: ["система, элемент, структура", "секреция, транспорт, аннуляция", "чартер, тур, рафтинг", "пансион, патронаж, кейс-стади"] },
+            { q: "Жанры научного стиля:", o: ["рецензия, дипломная работа, реферат", "ода, послание, сонет", "эссе, хроника, фельетон", "характеристика, расписка, протокол"] },
+            { q: "Стиль, для которого характерно использование терминов:", o: ["научный стиль", "разговорный стиль", "официально-деловой стиль", "публицистический стиль"] },
+            { q: "Самая большая по объему часть научного сочинения:", o: ["основная часть", "заключение", "библиография", "введение"] },
+            { q: "Часть публичной речи, в которой подводятся итоги, обобщаются высказанные мысли:", o: ["заключение", "аргументы", "вступление", "тезисы"] },
+            { q: "В конце публичного выступления уместно сказать:", o: ["Благодарю за внимание", "Мое время, кажется, истекло", "Извините, если говорил долго", "До свидания"] },
+            { q: "Форма речи, характерная для научного стиля:", o: ["письменная подготовленная", "устная спонтанная", "устная форма", "разговорная"] },
+            { q: "Словосочетание со связью согласование:", o: ["древнегреческий врач", "медицина и практика", "верить лекарствам", "алкалоиды опия"] },
+            { q: "Цитата - это:", o: ["дословная выдержка из текста", "чужая речь в форме СПП", "воспроизводимая дословно чужая речь", "рассказ о событиях"] }
+        ];
+
+        let questions = [];
+        let currentIndex = 0;
+        let score = 0;
+        let answered = false;
+
+        function initQuiz() {
+            questions = rawData.map(item => {
+                const correctAnswer = item.o[0];
+                const shuffledOptions = [...item.o].sort(() => Math.random() - 0.5);
+                return {
+                    question: item.q,
+                    options: shuffledOptions,
+                    correct: correctAnswer
+                };
+            }).sort(() => Math.random() - 0.5);
+
+            currentIndex = 0;
+            score = 0;
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            document.getElementById('quiz-header').classList.remove('hidden');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            answered = false;
+            document.getElementById('next-btn').classList.add('hidden');
+            
+            const q = questions[currentIndex];
+            document.getElementById('progress-text').innerText = `Вопрос ${currentIndex + 1} из ${questions.length}`;
+            document.getElementById('question-text').innerText = q.question;
+
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+
+            q.options.forEach((option) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-4 rounded-xl bg-slate-800/60 border border-slate-700/60 hover:border-indigo-500/50 hover:bg-slate-800 text-slate-200 font-medium transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99]";
+                btn.innerText = option;
+                btn.onclick = () => selectOption(btn, option, q.correct);
+                container.appendChild(btn);
+            });
+        }
+
+        function selectOption(button, selected, correct) {
+            if (answered) return;
+            answered = true;
+
+            const buttons = document.getElementById('options-container').children;
+
+            if (selected === correct) {
+                button.className = "w-full text-left p-4 rounded-xl bg-emerald-500/20 border border-emerald-500 text-emerald-300 font-medium transition-all animate-fade-in";
+                score++;
+            } else {
+                button.className = "w-full text-left p-4 rounded-xl bg-rose-500/20 border border-rose-500 text-rose-300 font-medium transition-all animate-fade-in";
+                for (let b of buttons) {
+                    if (b.innerText === correct) {
+                        b.className = "w-full text-left p-4 rounded-xl bg-emerald-500/20 border border-emerald-500 text-emerald-300 font-medium transition-all";
+                    }
+                }
+            }
+
+            for (let b of buttons) {
+                b.style.pointerEvents = 'none';
+            }
+
+            const nextBtn = document.getElementById('next-btn');
+            nextBtn.classList.remove('hidden');
+            if (currentIndex === questions.length - 1) {
+                nextBtn.innerText = "Узнать диагноз (Результаты)";
+            } else {
+                nextBtn.innerText = "Следующий вопрос";
+            }
+        }
+
+        function nextQuestion() {
+            currentIndex++;
+            if (currentIndex < questions.length) {
+                loadQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('quiz-header').classList.add('hidden');
+            document.getElementById('next-btn').classList.add('hidden');
+            
+            const resultScreen = document.getElementById('result-screen');
+            resultScreen.classList.remove('hidden');
+
+            const percentage = Math.round((score / questions.length) * 100);
+            document.getElementById('score-text').innerText = `Правильных ответов: ${score} из ${questions.length} (${percentage}%)`;
+
+            const feedbackBox = document.getElementById('feedback-box');
+            const emojiBox = document.getElementById('result-emoji');
+
+            // Кекеткен және прикольный орысша вердиктер
+            if (percentage < 40) {
+                emojiBox.innerHTML = "🤡";
+                feedbackBox.className = "p-4 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-300 text-base font-medium";
+                feedbackBox.innerHTML = "Ну что закатаем губу? С такими познаниями русского языка тебе только в первом классе буквы учить. Экзамен тебя сожрет и не подавится. Срочно беги открывать учебники, пока тебя из универа на мороз не выставили! 🤦‍♂️📉";
+            } else if (percentage >= 40 && percentage < 75) {
+                emojiBox.innerHTML = "👀";
+                feedbackBox.className = "p-4 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-300 text-base font-medium";
+                feedbackBox.innerHTML = "Ни рыба, ни мясо. И вашим, и нашим. Вроде что-то знаешь, а вроде и чисто на удачу тыкал, как слепой котенок. С таким багажом знаний на экзамене придется молиться всем богам сразу. Давай-ка поднажми и готовься нормально! 📚🧐";
+            } else if (percentage >= 75 && percentage < 100) {
+                emojiBox.innerHTML = "😏";
+                feedbackBox.className = "p-4 rounded-xl border border-blue-500/40 bg-blue-500/10 text-blue-300 text-base font-medium";
+                feedbackBox.innerHTML = "Неплохо-неплохо, почти эрудит. Но не задирай нос раньше времени — пара тупых ошибок выдают в тебе любителя поугадывать наугад. Короче, **оси қалпыңнан тайма** (держи марку), но повторить перед сном всё же стоит! 🎯✨";
+            } else {
+                emojiBox.innerHTML = "👑";
+                feedbackBox.className = "p-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 text-base font-medium";
+                feedbackBox.innerHTML = "Ого, у нас тут гений всея Руси объявился! Ни единой ошибки. Даже подозрительно, не списывал ли у соседа? Короче, **осы қалпыңнан тайма**, красавчик! Экзаменаторам можешь сам лекции читать по русскому языку. Садись, пять! 🚀🔥";
+            }
+        }
+
+        function restartQuiz() {
+            initQuiz();
+        }
+
+        window.onload = initQuiz;
+    </script>
+</body>
+</html>
